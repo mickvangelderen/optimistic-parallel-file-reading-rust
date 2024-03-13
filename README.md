@@ -30,5 +30,6 @@ Should applications have a dedicated IO thread pool and a CPU thread pool?
 
 ## Possibly relevant
 
+https://www.reddit.com/r/rust/comments/nlyjb7/how_to_achieve_parallelism_that_retains_order_of/
 https://www.reddit.com/r/rust/comments/v81nt2/efficient_way_to_read_multiple_files_in_parallel/
 https://users.rust-lang.org/t/help-understanding-why-io-uring-io-performs-worse-than-stdlib-in-a-thread-pool/97853
