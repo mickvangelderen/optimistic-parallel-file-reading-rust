@@ -8,6 +8,8 @@ What if determining the number of messages is almost as expensive as reading all
 At the time of writing, this repository contains a Rust program that spawns a thread pool (through rayon) and optimistically reads files until it realizes it has seen enough messages.
 The author wonders if there is a better way to do things as we need to work around a lack of guarantees in which work is being picked up.
 Can you make rayon pick up work (not complete, but start) in a given order?
+Rayon is allegedly best used with CPU bound work.
+Should applications have a dedicated IO thread pool and a CPU thread pool?
 
 ## Example output
 
