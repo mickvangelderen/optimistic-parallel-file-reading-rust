@@ -66,10 +66,11 @@ fn main() -> std::io::Result<()> {
 
     let line_limit = 10;
 
+    // Used to determine the next file to open. This guarantees the order.
     let path_index = AtomicUsize::new(0);
     let line_counts = RwLock::new(LineCountState::new(paths.len()));
 
-    let mut results = (0..paths.len())
+    let mut index_and_lines = (0..paths.len())
         .into_par_iter()
         .map(|_| -> std::io::Result<(usize, Vec<String>)> {
             let index = path_index.fetch_add(1, Ordering::SeqCst);
@@ -78,16 +79,21 @@ fn main() -> std::io::Result<()> {
             let tid = std::thread::current().id();
 
             {
-                println!("{prefix} {tid:?}: locking to compute sequential lines read");
                 let line_counts = line_counts.read().unwrap();
+                let sum = line_counts.sum();
+                let total: usize = line_counts
+                    .counts
+                    .iter()
+                    .copied()
+                    .filter(|&v| v != usize::MAX)
+                    .sum();
                 println!(
-                    "{prefix} {tid:?}: sequential lines read = {}",
-                    line_counts.sum()
+                    "{prefix} {tid:?}: sequential lines read = {sum}, total lines read = {total}",
                 );
 
-                if line_counts.sum() >= line_limit {
+                if sum >= line_limit {
                     println!(
-                        "{prefix} {tid:?}: skipping {} because we already have enough data",
+                        "{prefix} {tid:?}: skipping {:?} because we already have enough data",
                         path.display()
                     );
 
@@ -96,28 +102,32 @@ fn main() -> std::io::Result<()> {
                 }
             }
 
-            println!("{prefix} {tid:?}: opening {}", path.display());
+            println!("{prefix} {tid:?}: opening {:?}", path.display());
             let reader = std::io::BufReader::new(std::fs::File::open(path)?);
             let lines = reader.lines().collect::<Result<Vec<_>, _>>()?;
+            // Pretend that the file is larger and that the time to reading and parse the data
+            // depends on the file size.
             std::thread::sleep(std::time::Duration::from_millis(
                 (100 * lines.len()).try_into().unwrap(),
             ));
-            println!("{prefix} {tid:?}: read {} lines", lines.len());
+            println!(
+                "{prefix} {tid:?}: closing {:?} with {} lines read",
+                path.display(),
+                lines.len()
+            );
 
             {
-                // println!("{prefix} {tid:?}: locking to write sequential lines read");
                 let mut line_counts = line_counts.write().unwrap();
                 line_counts.write(index, lines.len());
-                // println!("{prefix} {tid:?}: releasing lock to write sequential lines read");
             }
 
             Ok((index, lines))
         })
         .collect::<std::io::Result<Vec<(usize, Vec<_>)>>>()?;
 
-    results.sort_unstable_by(|(a, _), (b, _)| a.cmp(b));
+    index_and_lines.sort_unstable_by(|(a, _), (b, _)| a.cmp(b));
 
-    let lines = results
+    let lines = index_and_lines
         .into_iter()
         .flat_map(|(_, lines)| lines)
         .collect::<Vec<_>>();
