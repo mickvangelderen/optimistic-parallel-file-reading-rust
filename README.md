@@ -25,3 +25,8 @@ Can you make rayon pick up work (not complete, but start) in a given order?
   2  ThreadId(2): closing "c.txt" with 3 lines read
 ["a 1", "a 2", "a 3", "a 4", "a 5", "a 6", "a 7", "b 1", "b 2", "b 3", "b 4", "c 1", "c 2", "c 3"]
 ```
+
+## Possibly relevant
+
+https://www.reddit.com/r/rust/comments/v81nt2/efficient_way_to_read_multiple_files_in_parallel/
+https://users.rust-lang.org/t/help-understanding-why-io-uring-io-performs-worse-than-stdlib-in-a-thread-pool/97853
